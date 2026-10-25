@@ -30,11 +30,11 @@ const states=[["br","Brasil"],["ac","Acre"],["al","Alagoas"],["ap","Amapá"],["a
 const $=id=>document.getElementById(id);let results=[],selected="br";
 const num=v=>{let n=Number(String(v??"0").replace(",", "."));return Number.isFinite(n)?n:0};
 const fmt=v=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:2}).format(v);
-function getCandidates(d){return d?.cand||d?.candidatos||d?.candidates||[]}
+function getCandidates(d){if(Array.isArray(d?.cand))return d.cand;if(Array.isArray(d?.carg))return d.carg.flatMap(c=>(c.agr||[]).flatMap(a=>(a.par||[]).flatMap(p=>p.cand||[])));return d?.candidatos||d?.candidates||[]}
 function getName(c){return c.nm||c.nome||c.name||c.n||"Candidato"}
 function getVotes(c){return num(c.vap??c.votos??c.v??c.votosValidos)}
 function getPercent(c){return num(c.pvap??c.percentual??c.pct??c.percent)}
-function getApuracao(d){return num(d?.pst??d?.pesc??d?.percentualApurado??d?.percApuracao??d?.s??0)}
+function getApuracao(d){return num(d?.s?.pst??d?.pst??d?.pesc??d?.percentualApurado??d?.percApuracao??0)}
 function getTop(d){return getCandidates(d).map(c=>({name:getName(c),votes:getVotes(c),pct:getPercent(c),party:c.cc||c.partido||c.sg||""})).sort((a,b)=>b.votes-a.votes)}
 function render(){const q=$("search").value.toLocaleLowerCase("pt-BR");let list=results.filter(x=>x.name.toLocaleLowerCase("pt-BR").includes(q)||x.uf.toUpperCase().includes(q));if($("sort").value==="percent")list.sort((a,b)=>b.apuracao-a.apuracao);else list.sort((a,b)=>a.name.localeCompare(b.name,"pt-BR"));$("rows").innerHTML=list.map(x=>'<tr data-uf="'+x.uf+'" class="'+(x.uf===selected?'active':'')+'"><td><span class="uf">'+x.uf.toUpperCase()+'</span> · '+x.name+'</td><td><div>'+fmt(x.apuracao)+'%</div><div class="bar"><span style="width:'+Math.max(0,Math.min(100,x.apuracao))+'%"></span></div></td><td>'+esc(x.top?.[0]?.name||"—")+'</td><td>'+ (x.top?.[0]?fmt(x.top[0].pct)+"%":"—")+'</td></tr>').join("")||'<tr><td colspan="4">Nenhum estado encontrado.</td></tr>';document.querySelectorAll("tbody tr[data-uf]").forEach(tr=>tr.addEventListener("click",()=>showDetail(tr.dataset.uf)));$("count").textContent=results.length+" / 28";const br=results.find(x=>x.uf==="br");if(br){$("overall").textContent=fmt(br.apuracao)+"%";$("overallSub").textContent=(br.top?.[0]?.name||"Resultado nacional")+" em primeiro lugar"}}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
